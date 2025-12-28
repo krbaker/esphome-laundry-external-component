@@ -1,0 +1,14 @@
+# Development dependencies for ESPHome Dryer Vent Sensor Component
+# Constitution Principle VII: Host system isolation via virtual environments
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Code quality (optional)
+# black>=22.0.0
+# flake8>=5.0.0
+# mypy>=1.0.0
+
+# YAML validation (optional)
+# yamllint>=1.28.0
