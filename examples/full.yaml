@@ -1,6 +1,7 @@
 esphome:
   name: dryer_monitor_full
-  platform: ESP32
+
+esp32:
   board: esp32dev
 
 external_components:
@@ -11,50 +12,40 @@ external_components:
 dryer_vent_sensor:
   pulse_pin: 4    # Custom GPIO pin for pulse input
   test_pin: 16    # Custom GPIO pin for test output
-
-sensor:
-  - platform: dryer_vent_sensor
-    overheat:
-      name: "Dryer Overheat Alert"
-      device_class: temperature
-      state_class: measurement
-    clog:
-      name: "Dryer Vent Clog Alert"
-      state_class: measurement
-    selftest:
-      name: "Sensor Health Status"
-      state_class: measurement
-    short_packet:
-      name: "Short Packet Count"
-      state_class: total_increasing
-    short_start_packet:
-      name: "Short Start Packet Count"
-      state_class: total_increasing
-    long_start_packet:
-      name: "Long Start Packet Count"
-      state_class: total_increasing
-    short_clog_packet:
-      name: "Short Clog Packet Count"
-      state_class: total_increasing
-    long_clog_packet:
-      name: "Long Clog Packet Count"
-      state_class: total_increasing
-    short_overheat_packet:
-      name: "Short Overheat Packet Count"
-      state_class: total_increasing
-    long_overheat_packet:
-      name: "Long Overheat Packet Count"
-      state_class: total_increasing
-    unknown_packet:
-      name: "Unknown Packet Count"
-      state_class: total_increasing
-    selftest_counter:
-      name: "Self Test Execution Count"
-      state_class: total_increasing
-
-# Optional: Binary sensor for combined alerts
-binary_sensor:
-  - platform: template
-    name: "Dryer Maintenance Required"
-    lambda: |-
-      return id(dryer_overheat_alert).state || id(dryer_vent_clog_alert).state;
+  overheat:
+    name: "Dryer Overheat Alert"
+    device_class: temperature
+    state_class: measurement
+  clog:
+    name: "Dryer Vent Clog Alert"
+    state_class: measurement
+  selftest:
+    name: "Sensor Health Status"
+    state_class: measurement
+  short_packet:
+    name: "Short Packet Count"
+    state_class: total_increasing
+  short_start_packet:
+    name: "Short Start Packet Count"
+    state_class: total_increasing
+  long_start_packet:
+    name: "Long Start Packet Count"
+    state_class: total_increasing
+  short_clog_packet:
+    name: "Short Clog Packet Count"
+    state_class: total_increasing
+  long_clog_packet:
+    name: "Long Clog Packet Count"
+    state_class: total_increasing
+  short_overheat_packet:
+    name: "Short Overheat Packet Count"
+    state_class: total_increasing
+  long_overheat_packet:
+    name: "Long Overheat Packet Count"
+    state_class: total_increasing
+  unknown_packet:
+    name: "Unknown Packet Count"
+    state_class: total_increasing
+  selftest_counter:
+    name: "Self Test Execution Count"
+    state_class: total_increasing

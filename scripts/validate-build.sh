@@ -52,36 +52,26 @@ echo "Checking for full ESPHome build capability..."
 if command -v docker >/dev/null 2>&1; then
     echo "🐳 Docker available - performing full ESPHome build validation..."
     
-    # Create a test configuration
-    cat > test-config.yaml << 'EOF'
-esphome:
-  name: test_dryer_sensor
-
-esp32:
-  board: esp32dev
-
-external_components:
-  - source: components
-    components: [ dryer_vent_sensor ]
-
-dryer_vent_sensor:
-  overheat:
-    name: "Test Overheat"
-  clog:
-    name: "Test Clog"
-  selftest:
-    name: "Test Self Test"
-EOF
-
-    # Run ESPHome compile in Docker
-    if docker run --rm -v "$(pwd):/config" -v "$(pwd)/components:/components" esphome/esphome compile test-config.yaml; then
-        echo "✅ Full ESPHome build validation passed"
-        rm test-config.yaml
-    else
-        echo "❌ ESPHome build failed - check component implementation"
-        rm test-config.yaml
-        exit 1
-    fi
+    # Test both example configurations
+    for example in basic.yaml full.yaml; do
+        echo "Testing example: $example"
+        
+        # Create a test version with local component source
+        test_config="test-${example}"
+        sed 's|source: github://your-username/dryer-vent-sensor|source: components|' "examples/${example}" > "${test_config}"
+        
+        # Run ESPHome compile in Docker
+        if docker run --rm -v "$(pwd):/config" -v "$(pwd)/components:/components" esphome/esphome compile "${test_config}"; then
+            echo "✅ Example $example build validation passed"
+            rm "${test_config}"
+        else
+            echo "❌ Example $example build failed - check component implementation"
+            rm "${test_config}"
+            exit 1
+        fi
+    done
+    
+    echo "✅ All example configurations build validation passed"
 else
     echo "⚠️  Docker not available - skipping full ESPHome build validation"
     echo "ℹ️  Install Docker for complete build validation: https://docs.docker.com/get-docker/"
