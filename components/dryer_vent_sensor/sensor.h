@@ -1,4 +1,3 @@
-
 #include "esphome.h"
 
 #include "esphome/core/component.h"
@@ -6,7 +5,7 @@
 #include "esphome/components/sensor/sensor.h"
 
 #ifdef ARDUINO_ARCH_ESP32
-#include <driver/pulse_cnt.h>
+#include <driver/pcnt.h>
 #include <driver/gpio.h>
 #include <esp_timer.h>
 #endif
@@ -20,13 +19,24 @@
 int16_t ring[RING_SIZE] = {0}; // store number of pulses for every 20ms period
 uint16_t current_item = 0;
 
-pcnt_unit_handle_t pcnt_unit = NULL;
+pcnt_config_t pcnt_config = {
+    .pulse_gpio_num = 2,        // Will be updated in setup
+    .ctrl_gpio_num = -1,
+    .lctrl_mode = PCNT_MODE_KEEP,
+    .hctrl_mode = PCNT_MODE_KEEP,
+    .pos_mode = PCNT_COUNT_INC,
+    .neg_mode = PCNT_COUNT_DIS,
+    .counter_h_lim = 0,
+    .counter_l_lim = 0,
+    .unit = PCNT_UNIT_0,
+    .channel = PCNT_CHANNEL_0
+};
 
 static void IRAM_ATTR timer_intr_handler(void *arg) {
   int pulse_count;
-  pcnt_unit_get_count(pcnt_unit, &pulse_count);
+  pcnt_get_counter_value(PCNT_UNIT_0, &pulse_count);
   ring[current_item] = pulse_count;
-  pcnt_unit_clear_count(pcnt_unit);
+  pcnt_counter_clear(PCNT_UNIT_0);
   if (current_item >= RING_SIZE - 1){
     current_item = 0;
   }
@@ -100,40 +110,15 @@ class DryerVentSensor : public PollingComponent{
   void set_selftest_counter_sensor(esphome::sensor::Sensor *sensor) { selftest_counter_sensor_ = sensor; }
   
   void setup() override {
-    // Configure Pulse PIN
-    gpio_set_direction((gpio_num_t)pulse_pin_, GPIO_MODE_INPUT);
+    // Update pulse pin in config
+    pcnt_config.pulse_gpio_num = (gpio_num_t)pulse_pin_;
 
-    // Configure pulsecounter using new ESP-IDF API
-    pcnt_unit_config_t unit_config = {
-        .low_limit = -1,
-        .high_limit = 10000,
-        .intr_priority = 0,
-        .flags = {
-            .accum_count = false,
-        },
-    };
-    ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &pcnt_unit));
+    // Configure Pulse Counter using legacy ESP-IDF API for compatibility
+    pcnt_unit_config(&pcnt_config);
 
-    pcnt_chan_config_t chan_config = {
-        .edge_gpio_num = (gpio_num_t)pulse_pin_,
-        .level_gpio_num = -1,
-        .flags = {
-            .invert_edge_input = false,
-            .invert_level_input = false,
-            .virt_edge_io_level = 0,
-            .virt_level_io_level = 0,
-            .io_loop_back = false,
-        },
-    };
-    pcnt_channel_handle_t pcnt_chan = NULL;
-    ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
-
-    ESP_ERROR_CHECK(pcnt_channel_set_edge_action(pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
-    ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
-
-    ESP_ERROR_CHECK(pcnt_unit_enable(pcnt_unit));
-    ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
-    ESP_ERROR_CHECK(pcnt_unit_start(pcnt_unit));
+    // Configure Test PIN
+    gpio_set_direction((gpio_num_t)test_pin_, GPIO_MODE_OUTPUT);
+    gpio_set_level((gpio_num_t)test_pin_, 1);
 
     // Setup timer to check for ticks every 20ms using ESP-IDF timer
     const esp_timer_create_args_t timer_args = {
@@ -146,10 +131,6 @@ class DryerVentSensor : public PollingComponent{
     esp_timer_handle_t timer_handle;
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer_handle));
     ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handle, 20000)); // 20ms
- 
-    // Configure Test PIN
-    gpio_set_direction((gpio_num_t)test_pin_, GPIO_MODE_OUTPUT);
-    gpio_set_level((gpio_num_t)test_pin_, 1);
   }
 
   void update() override {
@@ -158,83 +139,83 @@ class DryerVentSensor : public PollingComponent{
     ESP_LOGD("dryer_vent_sensor", "Checking %i -> %i", review_position, end_position);
     while (review_position != end_position){
       if (ring[review_position] > 5){ // If we see a any pulse in this block
-	if (!in_pulse){ // if we weren't in a pulse already we reset things
-	  if (!in_packet){
-	    in_packet = true; //start our packet
-	    packet_pulses = 1;
-	  }
-	  else { // if we were already in a packet this is a new pulse
-	    packet_pulses ++;
-	  }
-	  in_pulse = true; // remember we are now in pulse
-	  pulse_length = 0; // this is our first pulse
-	}
-	pulse_length++;
+    if (!in_pulse){ // if we weren't in a pulse already we reset things
+      if (!in_packet){
+        in_packet = true; //start our packet
+        packet_pulses = 1;
+      }
+      else { // if we were already in a packet this is a new pulse
+        packet_pulses ++;
+      }
+      in_pulse = true; // remember we are now in pulse
+      pulse_length = 0; // this is our first pulse
+    }
+    pulse_length++;
       }
       if (ring[review_position] <= 5){
-	if (in_pulse){ // we were in a pulse
-	  ESP_LOGD("dryer_vent_sensor", "Pulse Length %i", pulse_length);
-	  if (pulse_length == 1){
-	    short_packet++;
-	  }
-	  in_pulse = false; // we are no longer
-	  break_length = 0; // reset out own counter
-	}
-	break_length++;
-	if (break_length > 50 && in_packet){ // detect the end of packets
-	  if (packet_pulses == 1){
-	    if (pulse_length < 25) {
-	      ESP_LOGD("dryer_vent_sensor", "1 Pulse Packet, %i long (unknown)", pulse_length);
-	      short_start++;
-	    }
-	    else if (pulse_length > 45){
-	      ESP_LOGD("dryer_vent_sensor", "1 Pulse Packet, %i long (unknown)", pulse_length);
-	      long_start++;
-	    }
-	    else {
-	      ESP_LOGD("dryer_vent_sensor", "1 Pulse Packet, %i long (test/startup)", pulse_length);
-	      if (test_outstanding){
-		test_outstanding = false;
-		test_failed = false;
-		selftest_count++;
-	      }
-	    }
+    if (in_pulse){ // we were in a pulse
+      ESP_LOGD("dryer_vent_sensor", "Pulse Length %i", pulse_length);
+      if (pulse_length == 1){
+        short_packet++;
+      }
+      in_pulse = false; // we are no longer
+      break_length = 0; // reset out own counter
+    }
+    break_length++;
+    if (break_length > 50 && in_packet){ // detect the end of packets
+      if (packet_pulses == 1){
+        if (pulse_length < 25) {
+          ESP_LOGD("dryer_vent_sensor", "1 Pulse Packet, %i long (unknown)", pulse_length);
+          short_start++;
+        }
+        else if (pulse_length > 45){
+          ESP_LOGD("dryer_vent_sensor", "1 Pulse Packet, %i long (unknown)", pulse_length);
+          long_start++;
+        }
+        else {
+          ESP_LOGD("dryer_vent_sensor", "1 Pulse Packet, %i long (test/startup)", pulse_length);
+          if (test_outstanding){
+        test_outstanding = false;
+        test_failed = false;
+        selftest_count++;
+          }
+        }
 
-	  }
-	  else if (packet_pulses == 3){
-	    ESP_LOGD("dryer_vent_sensor", "3 Pulse Packet (clog)");
-	    if (pulse_length < 3){
-	      short_clog++;
-	    }
-	    else if (pulse_length > 7){
-	      long_clog++;
-	    }
-	    clog = true;
-	  }
-	  else if (packet_pulses == 5){
-	    ESP_LOGD("dryer_vent_sensor", "5 Pulse Packet (overheat)");
-	    overheat = true;
-	    if (pulse_length < 3){
-	      short_overheat++;
-	    }
-	    else if (pulse_length > 7){
-	      long_overheat++;
-	    }
-	  }
-	  else {
-	    ESP_LOGD("dryer_vent_sensor", "%i Pulse Packet (error?)", packet_pulses);
-	    unknown_packet ++;
-	  }
-	  in_packet = false;
-	}
-	if (break_length > 65000){
-	  break_length = 101;
-	}
+      }
+      else if (packet_pulses == 3){
+        ESP_LOGD("dryer_vent_sensor", "3 Pulse Packet (clog)");
+        if (pulse_length < 3){
+          short_clog++;
+        }
+        else if (pulse_length > 7){
+          long_clog++;
+        }
+        clog = true;
+      }
+      else if (packet_pulses == 5){
+        ESP_LOGD("dryer_vent_sensor", "5 Pulse Packet (overheat)");
+        overheat = true;
+        if (pulse_length < 3){
+          short_overheat++;
+        }
+        else if (pulse_length > 7){
+          long_overheat++;
+        }
+      }
+      else {
+        ESP_LOGD("dryer_vent_sensor", "%i Pulse Packet (error?)", packet_pulses);
+        unknown_packet ++;
+      }
+      in_packet = false;
+    }
+    if (break_length > 65000){
+      break_length = 101;
+    }
       }
 
       review_position ++;
       if (review_position >= RING_SIZE -1){
-	review_position = 0;
+    review_position = 0;
       }
     }
     
@@ -261,9 +242,9 @@ class DryerVentSensor : public PollingComponent{
     if (test_outstanding){
       time_since_test++; // when tests are outstanding count how many times we look for them
       if (time_since_test > MAX_TEST_TIME) {
-	ESP_LOGD("dryer_vent_sensor", "self test failed");
-	test_failed = true; // if it takes too long declare it failed
-	test_outstanding = false;
+    ESP_LOGD("dryer_vent_sensor", "self test failed");
+    test_failed = true; // if it takes too long declare it failed
+    test_outstanding = false;
       }
     }
     //publish all of our data
@@ -284,5 +265,3 @@ class DryerVentSensor : public PollingComponent{
 
 }  // namespace dryer_vent_sensor
 }  // namespace esphome
-
-
