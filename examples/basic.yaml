@@ -1,0 +1,21 @@
+esphome:
+  name: dryer_monitor_basic
+  platform: ESP32
+  board: esp32dev
+
+external_components:
+  - source: github://your-username/dryer-vent-sensor
+    components: [ dryer_vent_sensor ]
+
+# Basic configuration with default pins
+dryer_vent_sensor:
+
+sensor:
+  - platform: dryer_vent_sensor
+    overheat:
+      name: "Dryer Overheat Status"
+      device_class: temperature
+    clog:
+      name: "Dryer Vent Clog Status"
+    selftest:
+      name: "Sensor Self Test Status"

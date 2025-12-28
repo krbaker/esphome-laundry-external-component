@@ -1,0 +1,75 @@
+# Sensor API Contract: Dryer Vent Sensor
+
+**Purpose**: Defines the internal sensor interface for the dryer vent sensor component
+**Format**: ESPHome Sensor API specification
+**Version**: 1.0.0
+
+## Sensor Interface
+
+### Overheat Sensor
+- **Type**: Binary Sensor
+- **Purpose**: Indicates if dryer vent overheat condition detected
+- **Update Frequency**: Every 15 seconds
+- **Value Range**: false (normal), true (overheat detected)
+- **Triggers**: 5-pulse packet detection
+
+### Clog Sensor
+- **Type**: Binary Sensor
+- **Purpose**: Indicates if dryer vent clog condition detected
+- **Update Frequency**: Every 15 seconds
+- **Value Range**: false (normal), true (clog detected)
+- **Triggers**: 3-pulse packet detection
+
+### Selftest Sensor
+- **Type**: Binary Sensor
+- **Purpose**: Indicates self-test status
+- **Update Frequency**: Every 15 seconds or on test completion
+- **Value Range**: false (test passed), true (test failed)
+- **Triggers**: Self-test completion or timeout
+
+### Packet Counter Sensors
+All counters are integer sensors that increment on detection:
+
+- **short_packet**: Count of short single-pulse packets
+- **short_start_packet**: Count of short start/test pulses (<25 ticks)
+- **long_start_packet**: Count of long start/test pulses (>45 ticks)
+- **short_clog_packet**: Count of short 3-pulse packets (<3 ticks per pulse)
+- **long_clog_packet**: Count of long 3-pulse packets (>7 ticks per pulse)
+- **short_overheat_packet**: Count of short 5-pulse packets (<3 ticks per pulse)
+- **long_overheat_packet**: Count of long 5-pulse packets (>7 ticks per pulse)
+- **unknown_packet**: Count of packets with unexpected pulse counts
+- **selftest_counter**: Count of successful self-tests
+
+**Type**: Integer Sensor
+**Update Frequency**: Every 15 seconds
+**Value Range**: 0 to UINT32_MAX
+**Triggers**: Packet detection or test completion
+
+## API Methods
+
+### publish_state(value)
+- **Purpose**: Update sensor value in ESPHome
+- **Parameters**: 
+  - `value`: Boolean for binary sensors, Integer for counters
+- **Called By**: Component update() method
+- **Frequency**: Per sensor every 15 seconds
+
+### get_setup_priority()
+- **Returns**: esphome::setup_priority::HARDWARE
+- **Purpose**: Ensures hardware setup before other components
+
+### update()
+- **Purpose**: Polling method called every 15 seconds
+- **Responsibilities**: 
+  - Process pulse counter data
+  - Detect packet patterns
+  - Update sensor states
+  - Publish all sensor values
+
+### setup()
+- **Purpose**: One-time initialization
+- **Responsibilities**:
+  - Configure GPIO pins
+  - Initialize pulse counter
+  - Setup timer interrupt
+  - Create sensor instances

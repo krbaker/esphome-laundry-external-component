@@ -1,50 +1,50 @@
-# [PROJECT_NAME] Constitution
+<!--
+Sync Impact Report:
+Version change: 1.3.0 → 1.4.0
+List of modified principles: VIII. Truthful Validation (added)
+Added sections: None
+Removed sections: None
+Templates requiring updates: plan-template.md (✅ updated)
+Follow-up TODOs: None
+-->
+
+# ESPHome Laundry External Component Constitution
 <!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. ESPHome Compatibility
+Every component must follow all ESPHome guidelines and best practices; Components must integrate seamlessly with the ESPHome framework; Components must follow ESPHome's YAML configuration patterns; Clear hardware requirements documented
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Hardware Abstraction
+Abstract sensor/actuator specifics for portability; Support multiple hardware variants; Document pin mappings and requirements
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Test-First (NON-NEGOTIABLE)
+TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced; Unit tests for core logic, integration tests for hardware interaction; All builds must compile cleanly without warnings
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Documentation
+Every component includes comprehensive user documentation; API examples provided; Configuration templates included; Troubleshooting guides for common issues
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Versioning & Simplicity
+Semantic versioning (MAJOR.MINOR.PATCH) for all releases; Breaking changes require major version bump; Start simple, avoid over-engineering; YAGNI principles applied
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. Validation Repeatability
+All code validation procedures must be scripted for team repeatability; Validation scripts stored in repository under scripts/ directory; Scripts must be executable by any team member without manual setup; Automated validation preferred over manual checks
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### VII. Host System Isolation
+Minimize host system dependencies and avoid modifying system state; Use virtual environments for Python tooling; Prefer lightweight containers (Docker) only when virtual environments insufficient; Never require system-wide package installations; Development environment must be reproducible across different host systems
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### VIII. Truthful Validation
+Validation scripts must accurately represent what they validate; Never claim success for incomplete or skipped validations; Clearly communicate validation scope and limitations; Prefer failing fast over deceptive success messages
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Additional Constraints
+Technology stack: C++ for components, YAML for configuration; Target platforms: ESP32, ESP8266; Memory constraints: <50KB RAM usage per component; Power efficiency: Low-power modes supported where applicable
+
+## Development Workflow
+Code review required for all changes; Testing gates: Unit tests pass, integration tests pass, builds clean without warnings; Deployment: Via ESPHome releases; CI/CD: Automated builds and tests on ESP32 simulator
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+Constitution supersedes all other practices; Amendments require pull request review and approval; Changes must include migration plan for existing users; Compliance verified in code reviews
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
-
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
+**Version**: 1.4.0 | **Ratified**: 2025-12-28 | **Last Amended**: 2025-12-28
 <!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->

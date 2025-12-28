@@ -31,7 +31,15 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- Verify all ESPHome guidelines and best practices are followed for the component
+- Hardware abstraction layer designed for portability
+- Test-first approach confirmed (tests planned before implementation)
+- Documentation plan includes user guides and examples
+- Versioning strategy follows semantic versioning principles
+- Build process ensures clean compilation without warnings
+- Validation scripts created for all code validation procedures
+- Host system isolation maintained (virtual environments preferred)
+- Validation scripts provide truthful feedback about what they validate
 
 ## Project Structure
 

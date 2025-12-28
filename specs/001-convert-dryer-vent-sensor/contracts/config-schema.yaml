@@ -1,0 +1,84 @@
+# ESPHome Configuration Schema: Dryer Vent Sensor
+
+**Purpose**: Defines the YAML configuration interface for the dryer vent sensor external component
+**Format**: ESPHome YAML configuration schema
+**Version**: 1.0.0
+
+## Component Configuration
+
+```yaml
+# Example ESPHome configuration
+esphome:
+  name: dryer_monitor
+
+esp32:
+  board: esp32dev
+
+external_components:
+  - source: github://username/dryer-vent-sensor
+    components: [ dryer_vent_sensor ]
+
+dryer_vent_sensor:
+  pulse_pin: 2    # GPIO pin for pulse input (default: 2)
+  test_pin: 15    # GPIO pin for test output (default: 15)
+
+sensor:
+  - platform: dryer_vent_sensor
+    overheat:
+      name: "Dryer Overheat Status"
+    clog:
+      name: "Dryer Vent Clog Status"
+    selftest:
+      name: "Dryer Sensor Self Test"
+    short_packet:
+      name: "Dryer Short Packets"
+    short_start_packet:
+      name: "Dryer Short Start Packets"
+    long_start_packet:
+      name: "Dryer Long Start Packets"
+    short_clog_packet:
+      name: "Dryer Short Clog Packets"
+    long_clog_packet:
+      name: "Dryer Long Clog Packets"
+    short_overheat_packet:
+      name: "Dryer Short Overheat Packets"
+    long_overheat_packet:
+      name: "Dryer Long Overheat Packets"
+    unknown_packet:
+      name: "Dryer Unknown Packets"
+    selftest_counter:
+      name: "Dryer Self Test Counter"
+```
+
+## Schema Definition
+
+### dryer_vent_sensor
+- **Type**: Component configuration
+- **Required**: No (component auto-configures with defaults)
+- **Properties**:
+  - `pulse_pin`: Integer (optional, default 2) - GPIO pin for pulse input
+  - `test_pin`: Integer (optional, default 15) - GPIO pin for test output
+
+### sensor[dryer_vent_sensor]
+- **Type**: Sensor platform configuration
+- **Required**: Yes (at least one sensor must be configured)
+- **Properties**:
+  - `overheat`: Boolean sensor configuration
+  - `clog`: Boolean sensor configuration
+  - `selftest`: Boolean sensor configuration
+  - `short_packet`: Integer sensor configuration
+  - `short_start_packet`: Integer sensor configuration
+  - `long_start_packet`: Integer sensor configuration
+  - `short_clog_packet`: Integer sensor configuration
+  - `long_clog_packet`: Integer sensor configuration
+  - `short_overheat_packet`: Integer sensor configuration
+  - `long_overheat_packet`: Integer sensor configuration
+  - `unknown_packet`: Integer sensor configuration
+  - `selftest_counter`: Integer sensor configuration
+
+### Sensor Configuration Properties
+Each sensor supports:
+- `name`: String (required) - Friendly name for Home Assistant
+- `id`: String (optional) - Internal ESPHome ID
+- `icon`: String (optional) - Icon for display
+- `unit_of_measurement`: String (optional) - Units for display
