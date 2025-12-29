@@ -16,6 +16,7 @@ dryer_vent_sensor:
     name: "Dryer Overheat Alert"
     device_class: temperature
     state_class: measurement
+    id: overheat_alarm
   clog:
     name: "Dryer Vent Clog Alert"
     state_class: measurement
@@ -49,3 +50,15 @@ dryer_vent_sensor:
   selftest_counter:
     name: "Self Test Execution Count"
     state_class: total_increasing
+
+
+binary_sensor:
+  - platform: template
+    name: "Dryer Exhaust Overheat"
+    device_class: heat
+    lambda: |-
+      if (id(overheat_alarm).state > 0) {
+        return true;
+      } else {
+        return false;
+      }
